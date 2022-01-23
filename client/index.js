@@ -1,7 +1,12 @@
 import "./index.scss";
+const EC = require('elliptic').ec;
+const SHA256 = require('crypto-js/sha256');
+
+const ec = new EC('secp256k1');
 
 const server = "http://localhost:3042";
 
+console.log("Hello Word")
 document.getElementById("exchange-address").addEventListener('input', ({ target: {value} }) => {
   if(value === "") {
     document.getElementById("balance").innerHTML = 0;
@@ -16,13 +21,25 @@ document.getElementById("exchange-address").addEventListener('input', ({ target:
 });
 
 document.getElementById("transfer-amount").addEventListener('click', () => {
-  const sender = document.getElementById("exchange-address").value;
+  const privateKey = document.getElementById("private-key").value;
   const amount = document.getElementById("send-amount").value;
   const recipient = document.getElementById("recipient").value;
 
+  /* We will send 3 componenents to server to verify the transaction
+  a. Original transaction which will have recipient and amount
+  b. DER of signature signed by private key of owner on hash of (a)
+  c. Public key of signed primary key to validate
+  The server will use (b) and using (c) will verify if valid (b) was provided 
+  */
+  // Define the transaction to be digitally signed by private key
+  const transaction = {"recipient": recipient,"amount":amount}
+
+  const key = ec.keyFromPrivate(privateKey);
+  const msgHash = SHA256(JSON.stringify(transaction));
+  const signature = key.sign(msgHash.toString());
+
   const body = JSON.stringify({
-    sender, amount, recipient
-  });
+    "signature":signature.toDER(), "transaction":transaction,"publicKey": key.getPublic().encode('hex')})
 
   const request = new Request(`${server}/send`, { method: 'POST', body });
 
