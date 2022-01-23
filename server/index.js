@@ -61,7 +61,7 @@ app.post('/send', (req, res) => {
   
   console.log(key.verify(SHA256(JSON.stringify(transaction)).toString(),signature));
 
-  if (key.verify(SHA256(JSON.stringify(transaction)).toString(),signature)){
+  if (key.verify(SHA256(JSON.stringify(transaction)).toString(),signature) && balances.hasOwnProperty(transaction.recipient)){
     console.log("sender public:"+publicKey)
     console.log("recipient public:"+transaction.recipient)
     console.log("sender balance: "+balances[publicKey]);
@@ -71,8 +71,8 @@ app.post('/send', (req, res) => {
     res.send({ balance: balances[publicKey] });
   }
   else{
-    res.statusMessage = "Private key is incorrect";
-    res.send(400);
+    res.statusMessage = "Private key is incorrect or Recipient key is incorrect";
+    res.status(400).end("Private key is incorrect or Recipient key is incorrect")
   } 
   
 
